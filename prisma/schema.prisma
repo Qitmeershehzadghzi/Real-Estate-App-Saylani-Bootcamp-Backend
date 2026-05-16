@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,10 +8,87 @@ datasource db {
 }
 
 model User {
+
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
+
   name      String   @unique
   email     String   @unique
   password  String
+  avatar    String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  posts     Post[]
+}
+
+
+
+model Post {
+
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  title      String
+  price      Int
+
+  images     String[]
+
+  address    String?
+  city       String?
+
+  bedroom    Int?
+  bathroom   Int?
+
+  type       Type
+  property   Property
+
+  latitude   String?
+  longitude  String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userId     String   @db.ObjectId
+
+  user       User @relation(fields: [userId], references: [id])
+
+  postDetail PostDetail?
+}
+
+
+
+model PostDetail {
+
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  desc        String
+  utilities   String
+  pet         String
+  income      String
+
+  size        Int
+  school      Int
+  bus         Int
+  restaurant  Int
+
+  postId      String   @unique @db.ObjectId
+
+  post        Post? @relation(fields: [postId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+
+enum Type {
+  buy
+  rent
+}
+
+enum Property {
+  apartment
+  house
+  condo
+  land
 }

@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import bcrypt from "bcrypt";
 
 export const getUsers = async (req,res)=>{
 
@@ -35,24 +36,23 @@ const {password,avatar, ...inputs}=req.body;
 if (id != tokenUserId) {
     return res.status(403).json({message:"You are not authorized to update this profile"})
 }
-const updatePassword=null;
+let updatePassword=null;
 if(password){
     updatePassword=await bcrypt.hash(password,10);
 }
-// const body={...inputs,password:updatePassword}
 
 try {
 const updateuser=await prisma.user.update({
     where:{id},
     data:{
         ...inputs,
-        password:updatePassword,
+        ...(updatePassword && {password:updatePassword}),
         ...(avatar && {avatar}),
     },
    
 })
 const {password:userPassword, ...rest}=updateuser;
-return res.status(200).json(updateuser);
+return res.status(200).json(rest);
         
     } catch (error) {
         console.log(error);
