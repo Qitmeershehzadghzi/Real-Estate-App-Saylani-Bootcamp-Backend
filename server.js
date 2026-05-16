@@ -1,17 +1,21 @@
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
+import cors from "cors";
 import CookieParser from "cookie-parser";
 const app = express();
+app.use(cors({origin:process.env.FRONTEND_URL,credentials:true}));
 app.use(CookieParser());
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
 import postRoutes from "./routes/post.route.js";
+import testRoutes from "./routes/test.route.js"
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth",authRoutes);
 app.use("/api/users",userRoutes);
 app.use("/api/posts",postRoutes);
+app.use("/api/test",testRoutes);
 
 
 

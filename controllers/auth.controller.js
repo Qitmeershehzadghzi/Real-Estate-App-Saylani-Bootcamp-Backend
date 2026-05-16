@@ -1,83 +1,108 @@
 import bcrypt from "bcrypt";
-import {prisma} from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.js";
 import jwt from "jsonwebtoken";
+
+// REGISTER
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    // password hashing by bcrypt
+    // check existing user
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ name }, { email }],
+      },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
+
+    // hash password
     const hashPassword = await bcrypt.hash(password, 10);
 
-    // create new user in database
+    // create user
     const newUser = await prisma.user.create({
       data: {
-          name,
+        name,
         email,
         password: hashPassword,
       },
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "User registered successfully",
       user: newUser,
     });
-console.log(newUser);
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      message: "failed to register user",
+    return res.status(500).json({
+      message: "Failed to register user",
     });
   }
 };
+
+// LOGIN
 export const login = async (req, res) => {
   const { name, password } = req.body;
+
   try {
-    // check if the user exist or not
-    const user= await prisma.user.findUnique({
-      where: {
-        name,
-      },
+    const user = await prisma.user.findUnique({
+      where: { name },
     });
+
     if (!user) {
       return res.status(404).json({
         message: "User not found",
       });
     }
-    // compare password
-   const checkPassword = await bcrypt.compare(password, user.password);
-   if (!checkPassword) {
-    return res.status(400).json({
-      message: "Invalid password",
-    });
-   }
-   const age=1000*60*60*24*7;
 
+    const checkPassword = await bcrypt.compare(password, user.password);
 
+    if (!checkPassword) {
+      return res.status(400).json({
+        message: "Invalid password",
+      });
+    }
 
-   const token =jwt.sign({
-    id: user.id,
-   }, process.env.JWT_SECRET, {
-    expiresIn: age,
-   });
-   res.cookie("token", token,{
-    httpOnly: true,
-    maxAge: age,
-   }).status(200).json({
-    message: "User logged in successfully",
-    user,
-   });
-  
+    const token = jwt.sign(
+      { id: user.id ,
+        isAdmin:false
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const cookieAge = 1000 * 60 * 60 * 24 * 7;
+const {password:pass,...userWithoutPassword} =user
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        maxAge: cookieAge,
+      })
+      .status(200)
+      .json({
+        message: "User logged in successfully",
+        userWithoutPassword,
+      });
+
   } catch (error) {
-    log.error(error);
-    res.status(500).json({
-      message: "failed to login user",
+    console.error(error);
+    return res.status(500).json({
+      message: "Failed to login user",
     });
   }
+};
 
-}
+// LOGOUT
 export const logout = (req, res) => {
-  res.clearCookie("token").status(200).json({
-    message: "User logged out successfully",
-  });
-}
+  res
+    .clearCookie("token")
+    .status(200)
+    .json({
+      message: "User logged out successfully",
+    });
+};
