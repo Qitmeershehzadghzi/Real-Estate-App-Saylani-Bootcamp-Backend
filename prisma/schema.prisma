@@ -19,10 +19,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  posts     Post[]
+  posts      Post[]
+  savePosts  SavePost[]
+  messages   Message[]
 }
-
-
 
 model Post {
 
@@ -53,9 +53,8 @@ model Post {
   user       User @relation(fields: [userId], references: [id])
 
   postDetail PostDetail?
+  savePosts  SavePost[]
 }
-
-
 
 model PostDetail {
 
@@ -79,7 +78,53 @@ model PostDetail {
   updatedAt   DateTime @updatedAt
 }
 
+model SavePost {
 
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId     String   @db.ObjectId
+  postId     String   @db.ObjectId
+
+  user       User @relation(fields: [userId], references: [id])
+  post       Post @relation(fields: [postId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, postId])
+}
+
+model Chat {
+
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+
+  userIDs      String[]  @db.ObjectId
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  seenBy       String[]  @db.ObjectId
+
+  messages     Message[]
+
+  lastMessage  String?
+}
+
+model Message {
+
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+
+  text        String
+
+  chatId      String    @db.ObjectId
+  userId      String    @db.ObjectId
+
+  createdAt   DateTime  @default(now())
+
+  chat        Chat @relation(fields: [chatId], references: [id])
+
+  user        User @relation(fields: [userId], references: [id])
+}
 
 enum Type {
   buy
